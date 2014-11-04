@@ -1,6 +1,8 @@
 <%@ page pageEncoding="GB18030"%>
 <%@ page import="java.sql.*, com.xiaobo.bbs.*" %>
 
+<%@ taglib uri="http://ckeditor.com" prefix="ckeditor" %>
+
 <% 
 	int id = Integer.parseInt(request.getParameter("id"));			//从articleDetail.jsp传递过来的参数id作为下一级回复帖子的pid
 	int rootId = Integer.parseInt(request.getParameter("rootId"));
@@ -15,25 +17,8 @@
 <meta http-equiv="content-type" content="text/html; charset=GBK">
 <link rel="stylesheet" type="text/css" href="images/style.css" title="Integrated Styles">
 <script language="JavaScript" type="text/javascript" src="images/global.js"></script>
-<!-- fckeditor -->
-<script type="text/javascript" src="fckeditor/fckeditor.js"></script>
-<script type="text/javascript">
 
-window.onload = function()
-{
-	// Automatically calculates the editor base path based on the _samples directory.
-	// This is usefull only for these samples. A real application should use something like this:
-	// oFCKeditor.BasePath = '/fckeditor/' ;	// '/fckeditor/' is the default value.
-	// var sBasePath = document.location.pathname.substring(0,document.location.pathname.lastIndexOf('_samples')) ;
-	var sBasePath = "<%=request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort() + request.getContextPath() + "/fckeditor/" %>"
-//alert(sBasePath);
-	var oFCKeditor = new FCKeditor( 'cont' ) ;
-	oFCKeditor.BasePath	= sBasePath ;
-	oFCKeditor.ReplaceTextarea() ;
-}
 
-</script>
-<!-- end of fckeditor -->
 
 <link rel="alternate" type="application/rss+xml" title="RSS" href="http://bbs.chinajavaworld.com/rss/rssmessages.jspa?threadID=744236">
 </head>
@@ -81,8 +66,9 @@ window.onload = function()
                 	<form action="replyDeal.jsp" method="post">
                 		<input type="hidden" name="pid" value="<%=id %>"/>
                 		<input type="hidden" name="rootId" value="<%=rootId %>"/><br>
-                		标题：<input type="text" name="title"><br>
-                		内容：<textarea name="cont" rows="15" cols="80"></textarea>
+                		
+                		标题：<input type="text" name="title" ><br>
+                		内容：<textarea class="myclass" name="cont" rows="15" cols="80"></textarea>
                 		<br>
                 		<input type="submit" value="submit"/>
                 	</form>
@@ -114,5 +100,6 @@ window.onload = function()
     </tbody>
   </table>
 </div>
+<ckeditor:replaceAll basePath="/NewBBS/ckeditor/" className="myclass"/>
 </body>
 </html>

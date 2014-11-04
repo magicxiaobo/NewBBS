@@ -1,29 +1,32 @@
 <%@ page pageEncoding="GB18030"%>
-<%@ page import="java.sql.*, java.io.*, com.xiaobo.bbs.*, java.util.*"%>
+<%@ page import="java.sql.*, com.xiaobo.bbs.*, java.util.*"%>
 
-<%! 
+<%!
 private void tree(List<Article> articles, Connection conn, int id, int grade) {
 	String sql = "select * from article where pid = " + id;
 	Statement stmt = DB.createStmt(conn);
-	ResultSet rs = DB.executeQuery(stmt, sql);
+	ResultSet rs = DB.executeQuery(stmt, sql); 
 	try {
-		while (rs.next()) {
+		while(rs.next()) {
 			Article a = new Article();
 			a.initFromRs(rs);
 			a.setGrade(grade);
 			articles.add(a);
-			
-			if (!a.isLeaf()) {
-				tree(articles, conn, a.getId(), grade + 1);		//传这个节点的ID，作为它的孩子们的pid 
+			if(!a.isLeaf()) {
+				tree(articles, conn, a.getId(), grade + 1);
 			}
 		}
 	} catch (SQLException e) {
 		e.printStackTrace();
+	} finally {
+		
+		DB.close(rs);
+		DB.close(stmt);
 	}
 }
 %>
 
-<% 
+<%
 List<Article> articles = new ArrayList<Article>();
 Connection conn = DB.getConn();
 tree(articles, conn, 0, 0);
@@ -55,7 +58,8 @@ DB.close(conn);
   <table border="0" cellpadding="0" cellspacing="0" width="100%">
     <tbody>
       <tr valign="top">
-        <td width="98%"><p class="jive-breadcrumbs">论坛: Java语言*初级版(模仿)</p>
+        <td width="98%"><p class="jive-breadcrumbs">论坛: Java语言*初级版
+            (模仿)</p>
           <p class="jive-description"> 探讨Java语言基础知识,基本语法等 大家一起交流 共同提高！谢绝任何形式的广告 </p>
           </td>
       </tr>
@@ -98,14 +102,14 @@ DB.close(conn);
                   </tr>
                 </thead>
                 <tbody>
-                
                 <%
                 for(Iterator<Article> it = articles.iterator(); it.hasNext(); ) {
                 	Article a = it.next();
+                	System.out.println(a.getTitle());
                 	String preStr = "";
-                	for (int i = 0; i < a.getGrade(); i++) {
-                		preStr += "----";
-                	}
+  					for(int i=0; i<a.getGrade(); i++) {
+  						preStr += "----";
+  					}
                 %>
                   <tr class="jive-even">
                     <td class="jive-first" nowrap="nowrap" width="1%"><div class="jive-bullet"> <img src="images/read-16x16.gif" alt="已读" border="0" height="16" width="16">
@@ -119,12 +123,12 @@ DB.close(conn);
                     
                     <td class="jive-thread-name" width="95%"><a id="jive-thread-1" href="articleDetail.jsp?id=<%=a.getId() %>"><%=preStr + a.getTitle() %></a></td>
                     <td class="jive-author" nowrap="nowrap" width="1%"><span class=""> <a href="http://bbs.chinajavaworld.com/profile.jspa?userID=226030">bjsxt</a> </span></td>
-                    <td class="jive-view-count" width="1%"> 10000</td>		<!-- 浏览数量 -->
-                    <td class="jive-msg-count" width="1%"> 0</td>		<!-- 回复的数量 -->
+                    <td class="jive-view-count" width="1%"> 10000</td>
+                    <td class="jive-msg-count" width="1%"> 0</td>
                     <td class="jive-last" nowrap="nowrap" width="1%"><div class="jive-last-post"> <%=new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getPdate()) %> <br>
                         by: <a href="http://bbs.chinajavaworld.com/thread.jspa?messageID=780182#780182" title="jingjiangjun" style="">bjsxt &#187;</a> </div></td>
                   </tr>
-                 <%-- 
+                  <%--
                   <tr class="jive-odd">
                     <td class="jive-first" nowrap="nowrap" width="1%"><div class="jive-bullet"> <img src="images/read-16x16.gif" alt="已读" border="0" height="16" width="16">
                         <!-- div-->
@@ -142,8 +146,8 @@ DB.close(conn);
                     <td class="jive-last" nowrap="nowrap" width="1%"><div class="jive-last-post"> 2007-9-13 上午8:40 <br>
                         by: <a href="http://bbs.chinajavaworld.com/thread.jspa?messageID=780172#780172" title="downing114" style="">downing114 &#187;</a> </div></td>
                   </tr>
-                   --%>
-                 <%
+                    --%>
+                  <%
                   }
                   %>
                 </tbody>
