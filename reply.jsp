@@ -1,8 +1,8 @@
 <%@ page pageEncoding="GB18030"%>
-<%@ page import="java.sql.*, com.bjsxt.bbs.*" %>
+<%@ page import="java.sql.*, com.xiaobo.bbs.*" %>
 
 <% 
-	int id = Integer.parseInt(request.getParameter("id"));
+	int id = Integer.parseInt(request.getParameter("id"));			//从articleDetail.jsp传递过来的参数id作为下一级回复帖子的pid
 	int rootId = Integer.parseInt(request.getParameter("rootId"));
 %>
 
@@ -77,12 +77,12 @@ window.onload = function()
               <div class="jive-table">
                 <div class="jive-messagebox">
                 	
-                	<!-- 自己加的内容 -->
+                	<!-- 自己加的内容 , 这个form里将pid, rootId, title, cont传送给replyDeal.jsp -->
                 	<form action="replyDeal.jsp" method="post">
                 		<input type="hidden" name="pid" value="<%=id %>"/>
-                		<input type="hidden" name="rootId" value="<%=rootId %>"/>
-                		Title:<input type="text" name="title"><br>
-                		Content:<textarea name="cont" rows="15" cols="80"></textarea>
+                		<input type="hidden" name="rootId" value="<%=rootId %>"/><br>
+                		标题：<input type="text" name="title"><br>
+                		内容：<textarea name="cont" rows="15" cols="80"></textarea>
                 		<br>
                 		<input type="submit" value="submit"/>
                 	</form>
