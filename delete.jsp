@@ -1,6 +1,8 @@
 <%@ page pageEncoding="GB18030"%>
 <%@ page import="java.sql.*, com.xiaobo.bbs.*, java.util.*"%>
 
+<%@ include file="_sessionCheck.jsp" %>
+
 <%!
 private void delete(Connection conn, int id, boolean isLeaf) {
 	//delete all the children

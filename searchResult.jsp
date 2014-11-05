@@ -2,6 +2,8 @@
 <%@ page import="java.sql.*, com.xiaobo.bbs.*, java.util.*"%>
 
 <%
+//request.setCharacterEncoding("GB18030");
+
 boolean logined = false;
 String adminLogined = (String)session.getAttribute("adminLogined");
 if(adminLogined != null && adminLogined.trim().equals("true")) {
@@ -10,50 +12,54 @@ if(adminLogined != null && adminLogined.trim().equals("true")) {
  %>
 
 <%
+String keyword = new String(request.getParameter("keyword").getBytes("8859_1"), "GBK");
+if(keyword == null) keyword = "";
+
 final int PAGE_SIZE = 4;
 int pageNo = 1;
 String strPageNo = request.getParameter("pageNo");
-if (strPageNo != null && !strPageNo.trim().equals("")) {
+if(strPageNo != null && !strPageNo.trim().equals("")) {
 	try {
 		pageNo = Integer.parseInt(strPageNo);
 	} catch (NumberFormatException e) {
 		pageNo = 1;
-	}
-} 
-
-if (pageNo <= 0) {
-	pageNo = 1;
+	} 
 }
 
-int totalPages = 0;
 
+
+int totalPages = 0;
 
 List<Article> articles = new ArrayList<Article>();
 Connection conn = DB.getConn();
 
 Statement stmtCount = DB.createStmt(conn);
-ResultSet rsCount = DB.executeQuery(stmtCount, "select count(*) from article where pid = 0");
+String sqlCount = "select count(*) from article where title like '%" + keyword 
+			 + "%' or cont like '%" + keyword + "%'";
+System.out.println(sqlCount);
+ResultSet rsCount = DB.executeQuery(stmtCount, sqlCount);
 rsCount.next();
 int totalRecords = rsCount.getInt(1);
 
-totalPages = (totalRecords % PAGE_SIZE == 0) ? (totalRecords / PAGE_SIZE) : (totalRecords / PAGE_SIZE + 1);
+totalPages = (totalRecords + PAGE_SIZE - 1)/PAGE_SIZE;
 
-if (pageNo > totalPages) {
-	pageNo = totalPages;
-} 
+if(pageNo > totalPages) pageNo = totalPages;
 
-int startPos = (pageNo - 1) * PAGE_SIZE;
-
+if(pageNo <= 0) pageNo = 1;
 
 Statement stmt = DB.createStmt(conn);
-String sql = "select * from article where pid = 0 order by pdate desc limit " + startPos + ", " + PAGE_SIZE;
+int startPos = (pageNo-1) * PAGE_SIZE; 
+String sql = "select * from article where title like '%" + keyword 
+			 + "%' or cont like '%" + keyword + "%' order by pdate desc limit " + startPos + "," + PAGE_SIZE ;
 System.out.println(sql);
 ResultSet rs = DB.executeQuery(stmt, sql);
-while (rs.next()) {
+while(rs.next()) {
 	Article a = new Article();
 	a.initFromRs(rs);
 	articles.add(a);
 }
+DB.close(rsCount);
+DB.close(stmtCount);
 
 DB.close(rs);
 DB.close(stmt);
@@ -96,8 +102,8 @@ DB.close(conn);
     <table summary="Buttons" border="0" cellpadding="0" cellspacing="0">
       <tbody>
         <tr>
-          <td class="jive-icon"><a href="post.jsp"><img src="images/post-16x16.gif" alt="Create New Post" border="0" height="16" width="16"></a></td>
-          <td class="jive-icon-label"><a id="jive-post-thread" href="post.jsp">Create New Post</a></td>
+          <td class="jive-icon"><a href="post.jsp"><img src="images/post-16x16.gif" alt="发表新主题" border="0" height="16" width="16"></a></td>
+          <td class="jive-icon-label"><a id="jive-post-thread" href="post.jsp">发表新主题</a> <a href="http://bbs.chinajavaworld.com/forum.jspa?forumID=20&amp;isBest=1"></a></td>
         </tr>
       </tbody>
     </table>
@@ -106,24 +112,24 @@ DB.close(conn);
   <table border="0" cellpadding="3" cellspacing="0" width="100%">
     <tbody>
       <tr valign="top">
-        <td><span class="nobreak"> Page: 
-          <%=pageNo %> &nbsp; total pages  &nbsp; <%=totalPages %> - <span class="jive-paginator"> [</span></span>
+        <td><span class="nobreak"> 页: 
+          第<%=pageNo %>页,共页 - <span class="jive-paginator"> [</span></span>
           
           <span class="nobreak"><span class="jive-paginator">
-          <a href="articleFlat.jsp?pageNo=1">First</a></span></span>
+          <a href="articleFlat.jsp?pageNo=1">第一页</a></span></span>
           
           
           
           <span class="nobreak"><span class="jive-paginator">|</span></span>
           <span class="nobreak"><span class="jive-paginator">
-          <a href="articleFlat.jsp?pageNo=<%=pageNo - 1 %>">Prev</a>
+          <a href="searchResult.jsp?pageNo=<%=pageNo - 1 %>">上一页</a>
           </span></span>
           
          <span class="nobreak"><span class="jive-paginator">| </span></span>
          <span class="nobreak"><span class="jive-paginator">
-         <a href="articleFlat.jsp?pageNo=<%=pageNo + 1 %>">Next</a>
+         <a href="searchResult.jsp?pageNo=<%=pageNo + 1 %>&keyword=<%=keyword %>">下一页</a>
           |&nbsp; 
-          <a href="articleFlat.jsp?pageNo=<%=totalPages %>">Last</a> ] </span> </span> </td>
+          <a href="articleFlat.jsp?pageNo=<%=totalPages %>">最末页</a> ] </span> </span> </td>
       </tr>
     </tbody>
   </table>
@@ -147,34 +153,30 @@ DB.close(conn);
                 <tbody>
                 <%
                 int lineNo = 0;
-                for(Iterator<Article> it = articles.iterator(); it.hasNext();) {
+                for(Iterator<Article> it = articles.iterator(); it.hasNext(); ) {           
                 	Article a = it.next();
-                	System.out.println(a.getTitle());
-  					
-  					String classStr = (lineNo % 2 == 0) ? "jive-even" : "jive-odd";
+  					String classStr = lineNo%2 == 0 ? "jive-even" : "jive-odd";
                 %>
-                  <tr class=<%=classStr %>>
+                  <tr class="<%=classStr %>">
                     <td class="jive-first" nowrap="nowrap" width="1%"><div class="jive-bullet"> <img src="images/read-16x16.gif" alt="已读" border="0" height="16" width="16">
                         <!-- div-->
                       </div></td>
                       
                     <td nowrap="nowrap" width="1%">
-                    	
                     	<%
                     	String url = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
                     	url += request.getContextPath();
                     	url += request.getServletPath();
                     	url += request.getQueryString() == null ? "" : ("?" + request.getQueryString());
-                    	System.out.println(url);
-                    	//System.out.println(request.getRequestURI());		///NewBBS/articleFlat.jsp
-                    	//System.out.println(request.getRequestURL());		//http://localhost:8080/NewBBS/articleFlat.jsp
+                    	//System.out.println(url);
+                    	//System.out.println(request.getRequestURI());
+                    	//System.out.println(request.getRequestURL());
                     	 %>
-               			<% if (logined) {%>
-               				<a href="modify.jsp?id=<%=a.getId()%>">MOD</a>
-                    		<a href="delete.jsp?id=<%=a.getId()%>&isLeaf=<%=a.isLeaf()%>&pid=<%=a.getPid() %>&from=<%=url%>">DEL</a>
-                    	<%} %>
+                    	 <%if (logined) {%>
+                    	 	<a href="modify.jsp?id=<%=a.getId()%>">MOD</a>
+                    		<a href="delete.jsp?id=<%=a.getId()%>&isLeaf=<%=a.isLeaf()%>&pid=<%=a.getPid() %>&from=<%=url %>">DEL</a>
+                    	 <%} %>
                     </td>
-                    
                     
                     <td class="jive-thread-name" width="95%"><a id="jive-thread-1" href="articleDetailFlat.jsp?id=<%=a.getId() %>"><%=a.getTitle() %></a></td>
                     <td class="jive-author" nowrap="nowrap" width="1%"><span class=""> <a href="http://bbs.chinajavaworld.com/profile.jspa?userID=226030">bjsxt</a> </span></td>
@@ -183,8 +185,9 @@ DB.close(conn);
                     <td class="jive-last" nowrap="nowrap" width="1%"><div class="jive-last-post"> <%=new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getPdate()) %> <br>
                         by: <a href="http://bbs.chinajavaworld.com/thread.jspa?messageID=780182#780182" title="jingjiangjun" style="">bjsxt &#187;</a> </div></td>
                   </tr>
+                 
                   <%
-                  lineNo++;
+                  	lineNo++;
                   }
                   %>
                 </tbody>
