@@ -152,7 +152,18 @@ DB.close(conn);
                       </div></td>
                       
                     <td nowrap="nowrap" width="1%">
-                    	<a href="delete.jsp?id=<%=a.getId()%>&isLeaf=<%=a.isLeaf()%>&pid=<%=a.getPid() %>">DEL</a>
+                    	
+                    	<%
+                    	String url = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
+                    	url += request.getContextPath();
+                    	url += request.getServletPath();
+                    	url += request.getQueryString() == null ? "" : ("?" + request.getQueryString());
+                    	System.out.println(url);
+                    	//System.out.println(request.getRequestURI());		///NewBBS/articleFlat.jsp
+                    	//System.out.println(request.getRequestURL());		//http://localhost:8080/NewBBS/articleFlat.jsp
+                    	 %>
+               
+                    	<a href="delete.jsp?id=<%=a.getId()%>&isLeaf=<%=a.isLeaf()%>&pid=<%=a.getPid() %>&from=<%=url%>">DEL</a>
                     </td>
                     
                     
