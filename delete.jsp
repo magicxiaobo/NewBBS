@@ -2,34 +2,43 @@
 <%@ page import="java.sql.*, com.xiaobo.bbs.*, java.util.*"%>
 
 <%!
-private void tree(List<Article> articles, Connection conn, int id, int grade) {
-	String sql = "select * from article where pid = " + id;
-	Statement stmt = DB.createStmt(conn);
-	ResultSet rs = DB.executeQuery(stmt, sql); 
-	try {
-		while(rs.next()) {
-			Article a = new Article();
-			a.initFromRs(rs);
-			a.setGrade(grade);
-			articles.add(a);
-			if(!a.isLeaf()) {
-				tree(articles, conn, a.getId(), grade + 1);
+private void delete(Connection conn, int id, boolean isLeaf) {
+	//delete all the children
+	//delete(conn, child's id)
+	if (!isLeaf) {
+		String sql = "select * from article where pid = " + id;
+		Statement stmt = DB.createStmt(conn);
+		ResultSet rs = DB.executeQuery(stmt, sql); 
+		try {
+			while(rs.next()) {
+				delete(conn, rs.getInt("id"), rs.getInt("isLeaf")==0);
 			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			
+			DB.close(rs);
+			DB.close(stmt);
 		}
-	} catch (SQLException e) {
-		e.printStackTrace();
-	} finally {
-		
-		DB.close(rs);
-		DB.close(stmt);
 	}
+	//delete self
+	DB.executeUpdate(conn, "delete from article where id = " + id);
 }
 %>
 
 <%
-List<Article> articles = new ArrayList<Article>();
+//传过来的id有可能是空值，最好要验证一下，否则可能会throw NullPointerException
+int id = 0;
+String strId = request.getParameter("id");
+if (strId == null || strId.trim().equals("")) {
+	System.out.println("Null Pointer Exception! id can not be null");
+} else {
+	id = Integer.parseInt(strId);
+}
+boolean isLeaf = Boolean.parseBoolean("isLeaf");
+int pid = Integer.parseInt(request.getParameter("pid"));
 Connection conn = DB.getConn();
-tree(articles, conn, 0, 0);
+delete(conn, id, isLeaf);
 DB.close(conn);
 %>
 

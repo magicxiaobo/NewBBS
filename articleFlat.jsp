@@ -1,42 +1,62 @@
 <%@ page pageEncoding="GB18030"%>
 <%@ page import="java.sql.*, com.xiaobo.bbs.*, java.util.*"%>
 
-<%!
-private void tree(List<Article> articles, Connection conn, int id, int grade) {
-	String sql = "select * from article where pid = " + id;
-	Statement stmt = DB.createStmt(conn);
-	ResultSet rs = DB.executeQuery(stmt, sql); 
-	try {
-		while(rs.next()) {
-			Article a = new Article();
-			a.initFromRs(rs);
-			a.setGrade(grade);
-			articles.add(a);
-			if(!a.isLeaf()) {
-				tree(articles, conn, a.getId(), grade + 1);
-			}
-		}
-	} catch (SQLException e) {
-		e.printStackTrace();
-	} finally {
-		
-		DB.close(rs);
-		DB.close(stmt);
-	}
-}
-%>
 
 <%
+final int PAGE_SIZE = 4;
+int pageNo = 1;
+String strPageNo = request.getParameter("pageNo");
+if (strPageNo != null && !strPageNo.trim().equals("")) {
+	try {
+		pageNo = Integer.parseInt(strPageNo);
+	} catch (NumberFormatException e) {
+		pageNo = 1;
+	}
+} 
+
+if (pageNo <= 0) {
+	pageNo = 1;
+}
+
+int totalPages = 0;
+
+
 List<Article> articles = new ArrayList<Article>();
 Connection conn = DB.getConn();
-tree(articles, conn, 0, 0);
+
+Statement stmtCount = DB.createStmt(conn);
+ResultSet rsCount = DB.executeQuery(stmtCount, "select count(*) from article where pid = 0");
+rsCount.next();
+int totalRecords = rsCount.getInt(1);
+
+totalPages = (totalRecords % PAGE_SIZE == 0) ? (totalRecords / PAGE_SIZE) : (totalRecords / PAGE_SIZE + 1);
+
+if (pageNo > totalPages) {
+	pageNo = totalPages;
+} 
+
+int startPos = (pageNo - 1) * PAGE_SIZE;
+
+
+Statement stmt = DB.createStmt(conn);
+String sql = "select * from article where pid = 0 order by pdate desc limit " + startPos + ", " + PAGE_SIZE;
+System.out.println(sql);
+ResultSet rs = DB.executeQuery(stmt, sql);
+while (rs.next()) {
+	Article a = new Article();
+	a.initFromRs(rs);
+	articles.add(a);
+}
+
+DB.close(rs);
+DB.close(stmt);
 DB.close(conn);
 %>
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 <html>
 <head>
-<title>Java Programming</title>
+<title>Java语言*初级版</title>
 <meta http-equiv="content-type" content="text/html; charset=utf8">
 <link rel="stylesheet" type="text/css" href="images/style.css" title="Integrated Styles">
 <script language="JavaScript" type="text/javascript" src="images/global.js"></script>
@@ -58,8 +78,9 @@ DB.close(conn);
   <table border="0" cellpadding="0" cellspacing="0" width="100%">
     <tbody>
       <tr valign="top">
-        <td width="98%"><p class="jive-breadcrumbs">Forum: Java Programming</p>
-          <p class="jive-description"> Share Java study insight and make grogress together. Decline any ad! </p>
+        <td width="98%"><p class="jive-breadcrumbs">论坛: Java语言*初级版
+            (模仿)</p>
+          <p class="jive-description"> 探讨Java语言基础知识,基本语法等 大家一起交流 共同提高！谢绝任何形式的广告 </p>
           </td>
       </tr>
     </tbody>
@@ -78,8 +99,24 @@ DB.close(conn);
   <table border="0" cellpadding="3" cellspacing="0" width="100%">
     <tbody>
       <tr valign="top">
-        <td><span class="nobreak"> Page:
-          1,316 - <span class="jive-paginator"> [ <a href="http://bbs.chinajavaworld.com/forum.jspa?forumID=20&amp;start=0&amp;isBest=0">Prev</a> | <a href="http://bbs.chinajavaworld.com/forum.jspa?forumID=20&amp;start=0&amp;isBest=0" class="">1</a> <a href="http://bbs.chinajavaworld.com/forum.jspa?forumID=20&amp;start=25&amp;isBest=0" class="jive-current">2</a> <a href="http://bbs.chinajavaworld.com/forum.jspa?forumID=20&amp;start=50&amp;isBest=0" class="">3</a> <a href="http://bbs.chinajavaworld.com/forum.jspa?forumID=20&amp;start=75&amp;isBest=0" class="">4</a> <a href="http://bbs.chinajavaworld.com/forum.jspa?forumID=20&amp;start=100&amp;isBest=0" class="">5</a> <a href="http://bbs.chinajavaworld.com/forum.jspa?forumID=20&amp;start=125&amp;isBest=0" class="">6</a> | <a href="http://bbs.chinajavaworld.com/forum.jspa?forumID=20&amp;start=50&amp;isBest=0">Next</a> ] </span> </span> </td>
+        <td><span class="nobreak"> Page: 
+          <%=pageNo %> &nbsp; total pages  &nbsp; <%=totalPages %> - <span class="jive-paginator"> [</span></span>
+          
+          <span class="nobreak"><span class="jive-paginator">
+          <a href="articleFlat.jsp?pageNo=1">First</a></span></span>
+          
+          
+          
+          <span class="nobreak"><span class="jive-paginator">|</span></span>
+          <span class="nobreak"><span class="jive-paginator">
+          <a href="articleFlat.jsp?pageNo=<%=pageNo - 1 %>">Prev</a>
+          </span></span>
+          
+         <span class="nobreak"><span class="jive-paginator">| </span></span>
+         <span class="nobreak"><span class="jive-paginator">
+         <a href="articleFlat.jsp?pageNo=<%=pageNo + 1 %>">Next</a>
+          |&nbsp; 
+          <a href="articleFlat.jsp?pageNo=<%=totalPages %>">Last</a> ] </span> </span> </td>
       </tr>
     </tbody>
   </table>
@@ -91,26 +128,25 @@ DB.close(conn);
               <table summary="List of threads" cellpadding="0" cellspacing="0" width="100%">
                 <thead>
                   <tr>
-                    <th class="jive-first" colspan="3"> Topic </th>
-                    <th class="jive-author"> <nobr> Editor
+                    <th class="jive-first" colspan="3"> 主题 </th>
+                    <th class="jive-author"> <nobr> 作者
                       &nbsp; </nobr> </th>
-                    <th class="jive-view-count"> <nobr> Views
+                    <th class="jive-view-count"> <nobr> 浏览
                       &nbsp; </nobr> </th>
-                    <th class="jive-msg-count" nowrap="nowrap"> reply </th>
-                    <th class="jive-last" nowrap="nowrap"> Newest Post </th>
+                    <th class="jive-msg-count" nowrap="nowrap"> 回复 </th>
+                    <th class="jive-last" nowrap="nowrap"> 最新帖子 </th>
                   </tr>
                 </thead>
                 <tbody>
                 <%
-                for(Iterator<Article> it = articles.iterator(); it.hasNext(); ) {
+                int lineNo = 0;
+                for(Iterator<Article> it = articles.iterator(); it.hasNext();) {
                 	Article a = it.next();
                 	System.out.println(a.getTitle());
-                	String preStr = "";
-  					for(int i=0; i<a.getGrade(); i++) {
-  						preStr += "----";
-  					}
+  					
+  					String classStr = (lineNo % 2 == 0) ? "jive-even" : "jive-odd";
                 %>
-                  <tr class="jive-even">
+                  <tr class=<%=classStr %>>
                     <td class="jive-first" nowrap="nowrap" width="1%"><div class="jive-bullet"> <img src="images/read-16x16.gif" alt="已读" border="0" height="16" width="16">
                         <!-- div-->
                       </div></td>
@@ -120,33 +156,15 @@ DB.close(conn);
                     </td>
                     
                     
-                    <td class="jive-thread-name" width="95%"><a id="jive-thread-1" href="articleDetail.jsp?id=<%=a.getId() %>"><%=preStr + a.getTitle() %></a></td>
+                    <td class="jive-thread-name" width="95%"><a id="jive-thread-1" href="articleDetailFlat.jsp?id=<%=a.getId() %>"><%=a.getTitle() %></a></td>
                     <td class="jive-author" nowrap="nowrap" width="1%"><span class=""> <a href="http://bbs.chinajavaworld.com/profile.jspa?userID=226030">bjsxt</a> </span></td>
                     <td class="jive-view-count" width="1%"> 10000</td>
                     <td class="jive-msg-count" width="1%"> 0</td>
                     <td class="jive-last" nowrap="nowrap" width="1%"><div class="jive-last-post"> <%=new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getPdate()) %> <br>
                         by: <a href="http://bbs.chinajavaworld.com/thread.jspa?messageID=780182#780182" title="jingjiangjun" style="">bjsxt &#187;</a> </div></td>
                   </tr>
-                  <%--
-                  <tr class="jive-odd">
-                    <td class="jive-first" nowrap="nowrap" width="1%"><div class="jive-bullet"> <img src="images/read-16x16.gif" alt="已读" border="0" height="16" width="16">
-                        <!-- div-->
-                      </div></td>
-                    <td nowrap="nowrap" width="1%">&nbsp;
-                      
-                      
-                      
-                      
-                      &nbsp;</td>
-                    <td class="jive-thread-name" width="95%"><a id="jive-thread-2" href="http://bbs.chinajavaworld.com/thread.jspa?threadID=744234&amp;tstart=25">请 兄弟们指点下那里 错误，，，</a></td>
-                    <td class="jive-author" nowrap="nowrap" width="1%"><span class=""> <a href="http://bbs.chinajavaworld.com/profile.jspa?userID=226028">403783154</a> </span></td>
-                    <td class="jive-view-count" width="1%"> 52</td>
-                    <td class="jive-msg-count" width="1%"> 2</td>
-                    <td class="jive-last" nowrap="nowrap" width="1%"><div class="jive-last-post"> 2007-9-13 上午8:40 <br>
-                        by: <a href="http://bbs.chinajavaworld.com/thread.jspa?messageID=780172#780172" title="downing114" style="">downing114 &#187;</a> </div></td>
-                  </tr>
-                    --%>
                   <%
+                  lineNo++;
                   }
                   %>
                 </tbody>
